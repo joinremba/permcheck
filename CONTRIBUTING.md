@@ -1,4 +1,4 @@
-# Contributing to @remba/gate
+# Contributing to @joinremba/gate
 
 Thank you for your interest in contributing to Gate! We welcome contributions from everyone, whether it is a bug fix, a new feature, or improved documentation.
 

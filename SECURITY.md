@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in @remba/gate, please report it privately by emailing **bensxnisaac@gmail.com**. Please do not open a public issue.
+If you discover a security vulnerability in @joinremba/gate, please report it privately by emailing **bensxnisaac@gmail.com**. Please do not open a public issue.
 
 You can expect an acknowledgement within 48 hours and an initial assessment within 5 business days. We will keep you informed of progress towards a fix and release.
 
@@ -17,7 +17,7 @@ Only the latest published version on npm receives security updates. You are enco
 
 ## Security Best Practices
 
-When using @remba/gate in your project, please follow these guidelines:
+When using @joinremba/gate in your project, please follow these guidelines:
 
 - **Validate all input** — Always use Zod schemas to validate request body, query, params, and headers. Never trust raw input from clients.
 - **Use rate limiting** — Configure rate limits to protect your endpoints from abuse and denial-of-service attacks.

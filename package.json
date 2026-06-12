@@ -1,5 +1,5 @@
 {
-  "name": "@remba/gate",
+  "name": "@joinremba/gate",
   "version": "0.1.0",
   "description": "API safety layer for TypeScript backends. Validate requests, format responses, prevent duplicates, manage API keys, and protect endpoints from abuse.",
   "type": "module",

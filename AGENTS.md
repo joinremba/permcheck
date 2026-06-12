@@ -1,4 +1,4 @@
-# @remba/gate
+# @joinremba/gate
 
 API safety layer for TypeScript backends: validation, responses, idempotency, rate limiting, and API keys.
 
@@ -33,12 +33,12 @@ API safety layer for TypeScript backends: validation, responses, idempotency, ra
 
 All modules importable individually:
 
-- `@remba/gate/validate`
-- `@remba/gate/respond`
-- `@remba/gate/idempotency`
-- `@remba/gate/rate-limit`
-- `@remba/gate/api-keys`
-- `@remba/gate/errors`
+- `@joinremba/gate/validate`
+- `@joinremba/gate/respond`
+- `@joinremba/gate/idempotency`
+- `@joinremba/gate/rate-limit`
+- `@joinremba/gate/api-keys`
+- `@joinremba/gate/errors`
 
 ## Patterns
 
@@ -57,9 +57,9 @@ All modules importable individually:
 
 ## Config Reference
 
-| Field        | Value         |
-| ------------ | ------------- |
-| Package name | `@remba/gate` |
-| Licence      | MIT           |
-| Engine       | `bun >=1.3.1` |
-| Runtime deps | zod           |
+| Field        | Value             |
+| ------------ | ----------------- |
+| Package name | `@joinremba/gate` |
+| Licence      | MIT               |
+| Engine       | `bun >=1.3.1`     |
+| Runtime deps | zod               |

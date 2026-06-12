@@ -1,7 +1,7 @@
-# @remba/gate
+# @joinremba/gate
 
-[![npm version](https://img.shields.io/npm/v/@remba/gate?logo=npm)](https://www.npmjs.com/package/@remba/gate)
-[![Licence](https://img.shields.io/npm/l/@remba/gate)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/@joinremba/gate?logo=npm)](https://www.npmjs.com/package/@joinremba/gate)
+[![Licence](https://img.shields.io/npm/l/@joinremba/gate)](LICENSE)
 [![CI](https://github.com/joinremba/gate/actions/workflows/ci.yml/badge.svg)](https://github.com/joinremba/gate/actions/workflows/ci.yml)
 [![Bun](https://img.shields.io/badge/Bun-%3E%3D1.3.1-black?logo=bun)](https://bun.sh)
 
@@ -22,13 +22,13 @@ Gate is the API safety layer for TypeScript backends. It validates requests, for
 ## Installation
 
 ```sh
-bun add @remba/gate
+bun add @joinremba/gate
 ```
 
 ## Quick Start
 
 ```ts
-import { createGate, ok } from "@remba/gate";
+import { createGate, ok } from "@joinremba/gate";
 import { z } from "zod";
 
 const gate = createGate({
@@ -46,12 +46,12 @@ app.post("/transfers", gate.middleware(), async (req, res) => {
 Gate is organised into sub-modules that can be imported individually:
 
 ```ts
-import { validateRequest } from "@remba/gate/validate";
-import { ok, fail, paginated, problem } from "@remba/gate/respond";
-import { idempotency, InMemoryStore } from "@remba/gate/idempotency";
-import { rateLimit, InMemoryRateLimitStore } from "@remba/gate/rate-limit";
-import { createApiKeyValidator } from "@remba/gate/api-keys";
-import { GateError, ValidationError, AuthenticationError } from "@remba/gate/errors";
+import { validateRequest } from "@joinremba/gate/validate";
+import { ok, fail, paginated, problem } from "@joinremba/gate/respond";
+import { idempotency, InMemoryStore } from "@joinremba/gate/idempotency";
+import { rateLimit, InMemoryRateLimitStore } from "@joinremba/gate/rate-limit";
+import { createApiKeyValidator } from "@joinremba/gate/api-keys";
+import { GateError, ValidationError, AuthenticationError } from "@joinremba/gate/errors";
 ```
 
 ### `createGate(options?)`
@@ -69,12 +69,12 @@ const gate = createGate({
 });
 ```
 
-### Validate (`@remba/gate/validate`)
+### Validate (`@joinremba/gate/validate`)
 
 Validate request body, query, params, and headers against Zod schemas.
 
 ```ts
-import { validateRequest } from "@remba/gate/validate";
+import { validateRequest } from "@joinremba/gate/validate";
 import { z } from "zod";
 
 const transferSchema = z.object({
@@ -90,12 +90,12 @@ if (!result.success) {
 }
 ```
 
-### Respond (`@remba/gate/respond`)
+### Respond (`@joinremba/gate/respond`)
 
 Build consistent API responses.
 
 ```ts
-import { ok, fail, paginated, problem } from "@remba/gate/respond";
+import { ok, fail, paginated, problem } from "@joinremba/gate/respond";
 
 // Success
 ok({ id: 1, name: "Alice" });
@@ -118,12 +118,12 @@ problem({
 });
 ```
 
-### Idempotency (`@remba/gate/idempotency`)
+### Idempotency (`@joinremba/gate/idempotency`)
 
 Prevent duplicate processing of the same request using idempotency keys.
 
 ```ts
-import { idempotency, InMemoryStore } from "@remba/gate/idempotency";
+import { idempotency, InMemoryStore } from "@joinremba/gate/idempotency";
 
 const guard = idempotency({
   store: new InMemoryStore(),
@@ -141,12 +141,12 @@ await guard.setResponse(idempotencyKey, response);
 
 Bring your own store by implementing the `IdempotencyStore` interface (Redis, Postgres, etc.).
 
-### Rate Limiting (`@remba/gate/rate-limit`)
+### Rate Limiting (`@joinremba/gate/rate-limit`)
 
 Protect endpoints from abuse.
 
 ```ts
-import { rateLimit, InMemoryRateLimitStore } from "@remba/gate/rate-limit";
+import { rateLimit, InMemoryRateLimitStore } from "@joinremba/gate/rate-limit";
 
 const limiter = rateLimit({
   windowMs: 60_000, // 1 minute
@@ -160,12 +160,12 @@ if (!allowed) throw new RateLimitError();
 
 Customise the key function to rate-limit by user ID, API key, or IP.
 
-### API Keys (`@remba/gate/api-keys`)
+### API Keys (`@joinremba/gate/api-keys`)
 
 Validate API keys with optional scoped permissions.
 
 ```ts
-import { createApiKeyValidator } from "@remba/gate/api-keys";
+import { createApiKeyValidator } from "@joinremba/gate/api-keys";
 
 const keys = createApiKeyValidator([
   { key: "sk-read-only", scopes: ["read"] },
@@ -182,7 +182,7 @@ const result = auth(request);
 if (!result.authenticated) throw new AuthenticationError(result.error);
 ```
 
-### Errors (`@remba/gate/errors`)
+### Errors (`@joinremba/gate/errors`)
 
 Standard error types for consistent error handling.
 
@@ -215,7 +215,7 @@ import type {
   ApiKeyEntry,
   AuthenticateOptions,
   AuthenticateResult,
-} from "@remba/gate";
+} from "@joinremba/gate";
 ```
 
 ## Examples
@@ -224,7 +224,7 @@ import type {
 
 ```ts
 import express from "express";
-import { createGate, ok } from "@remba/gate";
+import { createGate, ok } from "@joinremba/gate";
 import { z } from "zod";
 
 const app = express();
@@ -254,7 +254,7 @@ app.post(
 
 ```ts
 import { Hono } from "hono";
-import { createGate, ok } from "@remba/gate";
+import { createGate, ok } from "@joinremba/gate";
 
 const app = new Hono();
 const gate = createGate({ apiKeys: [{ key: "sk-admin" }] });
@@ -334,8 +334,8 @@ app.post("/orders", async (req, res, next) => {
 
 ## Related Packages
 
-- [@remba/beacon](https://github.com/joinremba/beacon) — Environment validation, config, secrets, and feature gates.
-- [@remba/catalog](https://github.com/joinremba/catalog) — Production-ready logging and error event layer built on Pino.
+- [@joinremba/beacon](https://github.com/joinremba/beacon) — Environment validation, config, secrets, and feature gates.
+- [@joinremba/catalog](https://github.com/joinremba/catalog) — Production-ready logging and error event layer built on Pino.
 
 ## Contributing
 
