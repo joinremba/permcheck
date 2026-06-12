@@ -162,7 +162,7 @@ Customise the key function to rate-limit by user ID, API key, or IP.
 
 ### API Keys (`@joinremba/gate/api-keys`)
 
-Validate API keys with optional scoped permissions.
+Validates API keys with optional scoped permissions. Designed for **internal** authentication — service-to-service, admin dashboards, cron jobs, webhooks. Not a replacement for user auth (OAuth, JWTs, password login).
 
 ```ts
 import { createApiKeyValidator } from "@joinremba/gate/api-keys";
@@ -181,6 +181,10 @@ const auth = keys.authenticate({ requiredScopes: ["write"], header: "Authorizati
 const result = auth(request);
 if (!result.authenticated) throw new AuthenticationError(result.error);
 ```
+
+**When to use it:** You have a few static keys for internal services, a shared webhook secret, or scoped tokens for admin tools. Keys are configured at startup and held in memory — no database query per request, zero dependencies.
+
+**When not to use it:** You need key rotation, hashed storage, per-user API keys, expiry/revocation, or rate limiting per key. For those cases, extend with a DB-backed validator (e.g. query Postgres with `SELECT * FROM api_keys WHERE key_hash = $1`).
 
 ### Errors (`@joinremba/gate/errors`)
 
