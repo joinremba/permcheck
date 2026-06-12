@@ -1,0 +1,12 @@
+logLevel = "error"
+
+[install]
+save = "exact"
+linker = "hoisted"
+
+[install.lockfile]
+save = true
+
+[test]
+timeout = 10000
+coverage = false
