@@ -6,6 +6,8 @@ import type { RateLimitStore, RateLimitCheckResult } from "./rate-limit";
 import { createApiKeyValidator } from "./api-keys";
 import type { ApiKeyEntry, AuthenticateResult } from "./api-keys";
 import type { IdempotencyStore } from "./idempotency";
+import type { Client } from "@joinremba/core";
+import { NetworkError } from "@joinremba/core";
 
 const gateAuthStore = new WeakMap<Request, AuthenticateResult>();
 const gateIdempotencyStore = new WeakMap<Request, string>();
@@ -88,6 +90,7 @@ export interface MiddlewareOptions {
 
 export interface GateOptions {
   apiKeys?: ApiKeyEntry[];
+  client?: Client;
   idempotency?: {
     store?: IdempotencyStore;
     keyHeader?: string;
@@ -122,6 +125,8 @@ export interface Gate {
 }
 
 export function createGate(options: GateOptions = {}): Gate {
+  const client = options.client;
+
   const idempInstance = idempotency({
     store: options.idempotency?.store ?? new InMemoryStore(),
     keyHeader: options.idempotency?.keyHeader,
@@ -136,6 +141,63 @@ export function createGate(options: GateOptions = {}): Gate {
   });
 
   const apiKeyValidator = createApiKeyValidator(options.apiKeys ?? []);
+
+  if (client) {
+    const origCheck = rlInstance.check.bind(rlInstance);
+    rlInstance.check = async (reqOrKey) => {
+      const key = typeof reqOrKey === "string" ? reqOrKey : rlInstance.keyFn(reqOrKey);
+      try {
+        return await client.checkRateLimit(key);
+      } catch (err) {
+        if (err instanceof NetworkError) return origCheck(reqOrKey);
+        throw err;
+      }
+    };
+
+    const origIdemGet = idempInstance.getResponse.bind(idempInstance);
+    const origIdemSet = idempInstance.setResponse.bind(idempInstance);
+    idempInstance.getResponse = async (key: string) => {
+      try {
+        const result = await client.checkIdempotency(key);
+        if (result.exists) return result.response;
+        return null;
+      } catch (err) {
+        if (err instanceof NetworkError) return origIdemGet(key);
+        throw err;
+      }
+    };
+    idempInstance.setResponse = async (key: string, response: unknown) => {
+      try {
+        await client.setIdempotency(key, response);
+      } catch (err) {
+        if (err instanceof NetworkError) return origIdemSet(key, response);
+        throw err;
+      }
+    };
+
+    const origAuthenticate = apiKeyValidator.authenticate.bind(apiKeyValidator);
+    apiKeyValidator.authenticate = (authOptions) => {
+      const handler = origAuthenticate(authOptions);
+      return async (req) => {
+        const token = req.headers
+          .get("Authorization")
+          ?.replace(/^Bearer\s+/i, "")
+          .trim();
+        if (token) {
+          try {
+            const result = await client.verifyApiKey(token);
+            if (result.valid) {
+              return { authenticated: true, key: token, scopes: result.scopes };
+            }
+            return { authenticated: false, error: "Invalid API key" };
+          } catch (err) {
+            if (!(err instanceof NetworkError)) throw err;
+          }
+        }
+        return handler(req);
+      };
+    };
+  }
 
   const defaultFail = (message: string, code?: string) => fail(message, code ?? "UNAUTHORIZED");
 
