@@ -2,10 +2,26 @@ import { validateRequest } from "./validate";
 import { ok, fail, paginated, problem } from "./respond";
 import { idempotency, InMemoryStore } from "./idempotency";
 import { rateLimit, InMemoryRateLimitStore, keyByApiKey } from "./rate-limit";
-import type { RateLimitStore } from "./rate-limit";
+import type { RateLimitStore, RateLimitCheckResult } from "./rate-limit";
 import { createApiKeyValidator } from "./api-keys";
 import type { ApiKeyEntry, AuthenticateResult } from "./api-keys";
 import type { IdempotencyStore } from "./idempotency";
+
+const gateAuthStore = new WeakMap<Request, AuthenticateResult>();
+const gateIdempotencyStore = new WeakMap<Request, string>();
+const gateRateLimitStore = new WeakMap<Request, RateLimitCheckResult>();
+
+export function getGateAuth(req: Request): AuthenticateResult | undefined {
+  return gateAuthStore.get(req);
+}
+
+export function getGateIdempotencyKey(req: Request): string | undefined {
+  return gateIdempotencyStore.get(req);
+}
+
+export function getGateRateLimit(req: Request): RateLimitCheckResult | undefined {
+  return gateRateLimitStore.get(req);
+}
 import {
   GateError,
   ValidationError,
@@ -153,6 +169,7 @@ export function createGate(options: GateOptions = {}): Gate {
         // Rate limit check
         if (enableRl) {
           const rlResult = await rlInstance.check(req);
+          gateRateLimitStore.set(req, rlResult);
           if (!rlResult.allowed) {
             const body = defaultFail("Too many requests", "RATE_LIMIT_EXCEEDED");
             return new Response(JSON.stringify(body), {
@@ -164,15 +181,12 @@ export function createGate(options: GateOptions = {}): Gate {
               },
             });
           }
-          req.headers.set("X-RateLimit-Remaining", String(rlResult.remaining));
         }
 
         // Auth check
         if (auth) {
           const authFn = apiKeyValidator.authenticate({ requiredScopes });
-          const authResult = await (authFn(req) as
-            | Promise<AuthenticateResult>
-            | AuthenticateResult);
+          const authResult = await authFn(req);
           if (!authResult.authenticated) {
             const body = defaultFail(authResult.error ?? "Unauthorized", "AUTHENTICATION_ERROR");
             return new Response(JSON.stringify(body), {
@@ -180,7 +194,7 @@ export function createGate(options: GateOptions = {}): Gate {
               headers: { "Content-Type": "application/json" },
             });
           }
-          (req as unknown as Record<string, unknown>).gateAuth = authResult;
+          gateAuthStore.set(req, authResult);
         }
 
         // Idempotency check
@@ -194,7 +208,7 @@ export function createGate(options: GateOptions = {}): Gate {
                 headers: { "Content-Type": "application/json" },
               });
             }
-            (req as unknown as Record<string, unknown>).gateIdempotencyKey = idemKey;
+            gateIdempotencyStore.set(req, idemKey);
           }
         }
 
@@ -203,9 +217,7 @@ export function createGate(options: GateOptions = {}): Gate {
 
         // Store response for idempotency
         if (enableIdem) {
-          const idemKey = (req as unknown as Record<string, unknown>).gateIdempotencyKey as
-            | string
-            | undefined;
+          const idemKey = gateIdempotencyStore.get(req);
           if (idemKey && response.status < 500) {
             const body = await response.clone().json();
             await idempInstance.setResponse(idemKey, body);

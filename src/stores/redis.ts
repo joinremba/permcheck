@@ -7,6 +7,7 @@ export interface RedisClient {
   setex(key: string, seconds: number, value: string): Promise<unknown>;
   incr(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<number>;
+  ttl(key: string): Promise<number>;
   del(key: string): Promise<number>;
 }
 
@@ -37,7 +38,6 @@ export class RedisRateLimitStore implements RateLimitStore {
   constructor(private client: RedisClient) {}
 
   async increment(key: string, windowMs: number): Promise<{ count: number; reset: number }> {
-    const now = Date.now();
     const windowSeconds = Math.ceil(windowMs / 1000);
     const count = await this.client.incr(key);
 
@@ -45,13 +45,11 @@ export class RedisRateLimitStore implements RateLimitStore {
       await this.client.expire(key, windowSeconds);
     }
 
-    const ttl = await this.client.get(key).then((v) => {
-      if (!v) return windowSeconds * 1000;
-      // approximate remaining TTL — we use incr+expire so ttl is reset
-      return windowMs;
-    });
+    const ttlSeconds = await this.client.ttl(key);
+    const remainingMs = ttlSeconds > 0 ? ttlSeconds * 1000 : windowMs;
+    const reset = Date.now() + remainingMs;
 
-    return { count, reset: now + ttl };
+    return { count, reset };
   }
 
   async reset(key: string): Promise<void> {

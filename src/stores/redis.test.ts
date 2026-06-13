@@ -29,6 +29,12 @@ function mockRedisClient(): RedisClient {
       store.set(key, { value: String(next), expires: entry.expires });
       return next;
     },
+    async ttl(key: string) {
+      const entry = store.get(key);
+      if (!entry) return -2;
+      const remaining = Math.ceil((entry.expires - Date.now()) / 1000);
+      return remaining > 0 ? remaining : -2;
+    },
     async expire(key: string, _seconds: number) {
       const entry = store.get(key);
       if (entry) {

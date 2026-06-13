@@ -92,37 +92,14 @@ export function createApiKeyValidator(keys: ApiKeyEntry[], options: ApiKeyValida
       const header = options.header ?? "Authorization";
       const requiredScopes = options.requiredScopes ?? [];
 
-      if (hashKeys) {
-        return async (req: Request): Promise<AuthenticateResult> => {
-          const authHeader = req.headers.get(header);
-          if (!authHeader) {
-            return { authenticated: false, error: "Missing API key" };
-          }
-
-          const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-          const result = await this.verify(token);
-
-          if (!result.authenticated) return result;
-
-          if (requiredScopes.length > 0) {
-            const hasScopes = requiredScopes.every((s) => result.scopes?.includes(s));
-            if (!hasScopes) {
-              return { authenticated: false, error: "Insufficient permissions" };
-            }
-          }
-
-          return result;
-        };
-      }
-
-      return (req: Request): AuthenticateResult => {
+      return async (req: Request): Promise<AuthenticateResult> => {
         const authHeader = req.headers.get(header);
         if (!authHeader) {
           return { authenticated: false, error: "Missing API key" };
         }
 
         const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-        const result = this.validate(token);
+        const result = hashKeys ? await this.verify(token) : this.validate(token);
 
         if (!result.authenticated) return result;
 

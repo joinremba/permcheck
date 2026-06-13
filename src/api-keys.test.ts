@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 import { createApiKeyValidator } from "./api-keys";
-import type { AuthenticateResult } from "./api-keys";
 
 test("validate returns authenticated for matching key", () => {
   const validator = createApiKeyValidator([{ key: "sk-live-abc", scopes: ["read"] }]);
@@ -38,7 +37,7 @@ test("authenticate middleware reads Authorization header", async () => {
   const req = new Request("http://localhost", {
     headers: { Authorization: "Bearer sk-test" },
   });
-  const result = await (auth(req) as Promise<AuthenticateResult>);
+  const result = await auth(req);
   expect(result.authenticated).toBe(true);
 });
 
@@ -48,7 +47,7 @@ test("authenticate rejects missing scopes", async () => {
   const req = new Request("http://localhost", {
     headers: { Authorization: "Bearer sk-test" },
   });
-  const result = await (auth(req) as Promise<AuthenticateResult>);
+  const result = await auth(req);
   expect(result.authenticated).toBe(false);
   expect(result.error).toBe("Insufficient permissions");
 });

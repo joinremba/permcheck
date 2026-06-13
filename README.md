@@ -13,7 +13,6 @@ Gate is the API safety layer for TypeScript backends. It validates requests, for
 - **Structured responses** — Consistent `{ success, data, error }` response envelope with `ok()` and `fail()` helpers.
 - **Problem details** — RFC 9457 problem-details-style error format.
 - **Pagination** — Standardised paginated response helper.
-- **Request ID** — Automatic request ID generation and propagation.
 - **Idempotency** — Prevent duplicate writes with idempotency keys. Ships with in-memory store; plug in Redis or Postgres.
 - **Rate limiting** — Protect endpoints from abuse with configurable windows and limits.
 - **API key management** — Rotatable, scoped API key authentication with Bearer token support.
@@ -191,10 +190,9 @@ if (!result.authenticated) throw new AuthenticationError(result.error);
 Store SHA-256 hashes instead of plaintext keys. Protects against memory dumps.
 
 ```ts
-const validator = createApiKeyValidator(
-  [{ key: "9418b81169b7...", scopes: ["admin"] }], // pre-computed sha256("sk-live-123")
-  { hashKeys: true }
-);
+const validator = createApiKeyValidator([{ key: "sk-live-123", scopes: ["admin"] }], {
+  hashKeys: true,
+});
 
 await validator.verify("sk-live-123");
 // -> { authenticated: true, key: "sk-live-123", scopes: ["admin"] }

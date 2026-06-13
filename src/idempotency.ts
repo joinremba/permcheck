@@ -6,6 +6,25 @@ export interface IdempotencyStore {
 
 export class InMemoryStore implements IdempotencyStore {
   private store = new Map<string, { value: unknown; expires: number }>();
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    this.cleanupInterval = setInterval(() => this.evictExpired(), 60_000);
+    if (
+      this.cleanupInterval &&
+      typeof this.cleanupInterval === "object" &&
+      "unref" in this.cleanupInterval
+    ) {
+      this.cleanupInterval.unref();
+    }
+  }
+
+  private evictExpired(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      if (now > entry.expires) this.store.delete(key);
+    }
+  }
 
   async get(key: string): Promise<unknown | null> {
     const entry = this.store.get(key);
@@ -23,6 +42,11 @@ export class InMemoryStore implements IdempotencyStore {
 
   async delete(key: string): Promise<void> {
     this.store.delete(key);
+  }
+
+  dispose(): void {
+    if (this.cleanupInterval) clearInterval(this.cleanupInterval);
+    this.store.clear();
   }
 }
 
