@@ -43,3 +43,7 @@ export class IdempotencyError extends GateError {
     this.name = "IdempotencyError";
   }
 }
+
+export function isGateError(err: unknown): err is GateError {
+  return err instanceof GateError;
+}

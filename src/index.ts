@@ -30,6 +30,7 @@ import {
   AuthenticationError,
   RateLimitError,
   IdempotencyError,
+  isGateError,
 } from "./errors";
 
 export {
@@ -49,6 +50,7 @@ export {
   AuthenticationError,
   RateLimitError,
   IdempotencyError,
+  isGateError,
 };
 
 export type { ValidationSchemas, ValidationResult, ValidatedRequest } from "./validate";
@@ -82,8 +84,6 @@ export interface MiddlewareOptions {
   requiredScopes?: string[];
   rateLimit?: boolean;
   idempotency?: boolean;
-  /** Override the max for this specific middleware. */
-  rateLimitMax?: number;
   /** Paths to skip entirely. */
   excludePaths?: string[];
 }

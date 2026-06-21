@@ -1,0 +1,42 @@
+# @joinremba/gate
+
+API safety layer for TypeScript backends: request validation, structured responses, rate limiting, idempotency, and API keys.
+
+## Commands
+bun test — Run tests
+bun run typecheck — tsc --noEmit
+bun run lint — ESLint
+bun run check — lint + format:check + typecheck + test
+bun run build — Build to dist/
+
+## Key API
+createGate({ apiKeys, rateLimit, idempotency, client }) -> Gate
+gate.validate(schemas, request) — Validate body/query/params/headers with Zod schemas
+gate.ok(data) — { success: true, data }
+gate.fail(msg, code?, details?) — { success: false, error: { message, code, details } }
+gate.paginated(data, total, page, limit) — paginated response with pages calc
+gate.problem(detail) — RFC 9457 problem details response
+
+## Sub-modules (deep imports)
+@joinremba/gate/validate — validateRequest, validate
+@joinremba/gate/respond — ok, fail, paginated, problem
+@joinremba/gate/idempotency — idempotency(), InMemoryStore, types
+@joinremba/gate/rate-limit — rateLimit(), InMemoryRateLimitStore, keyByApiKey
+@joinremba/gate/api-keys — createApiKeyValidator (in-memory)
+@joinremba/gate/errors — GateError, ValidationError, AuthenticationError, RateLimitError, IdempotencyError, isGateError
+@joinremba/gate/stores/redis — fromIORedis, RedisIdempotencyStore, RedisRateLimitStore
+@joinremba/gate/stores/redis-api-keys — RedisApiKeyStore
+@joinremba/gate/stores/postgres — PostgresIdempotencyStore, PostgresRateLimitStore
+@joinremba/gate/stores/postgres-api-keys — PostgresApiKeyStore (with ensureTable)
+@joinremba/gate/adapters/hono — createRateLimiter, requireIdempotencyKey, gateMiddleware
+
+## Hono Adapter
+createRateLimiter({ gate, keyPrefix, getKey? }) — Rate limit by custom key (window/max from gate config)
+requireIdempotencyKey({ gate, keyHeader? }) — Validates Idempotency-Key header, caches responses
+gateMiddleware(gate, { auth?, requiredScopes?, rateLimit?, idempotency?, excludePaths? }) — All-in-one middleware
+
+## Patterns
+Framework-agnostic design — plain functions, not tied to any HTTP library.
+Zod schemas for all validation. In-memory stores default; Redis/Postgres stores available.
+Remote client via @joinremba/core: client option re-routes rate-limit, idempotency, and API key validation with local fallback on NetworkError.
+All errors extend GateError with code and status properties.
