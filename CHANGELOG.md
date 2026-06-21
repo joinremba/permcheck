@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] — 2026-06-21
+
+### Fixed
+
+- `RedisApiKeyStore.setKey()` now uses `hset` (hash write) to match `validate()` which reads with `hgetall` — was silently broken with any real Redis client
+- `gateMiddleware` (Hono) now treats all success codes (200–399) as success instead of rejecting non-200
+- `PostgresRateLimitStore.increment()` acquires advisory lock before the upsert instead of after
+- `Gate.dispose()` added to clean up `InMemoryStore` / `InMemoryRateLimitStore` intervals (memory leak)
+
+### Removed
+
+- Unused `MiddlewareResult` type
+- `"sliding"` variant from `RateLimitStrategy` (was throwing "not implemented")
+
 ## [0.4.0] — 2026-06-13
 
 ### Added
