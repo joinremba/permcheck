@@ -34,7 +34,7 @@ Requires **Bun >= 1.3.1** and **Zod ^4.4.2** (installed automatically).
 ## Quick Start
 
 ```ts
-import { createPermcheck } from "permcheck";
+import  createPermcheck  from "permcheck";
 import { z } from "zod";
 
 const permcheck = createPermcheck({
