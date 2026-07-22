@@ -120,7 +120,7 @@
   "devDependencies": {
     "@types/bun": "^1.2.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
+    "@typescript-eslint/parser": "^8.65.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "hono": "^4.12.23",
