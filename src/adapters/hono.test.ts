@@ -131,7 +131,58 @@ describe("requireIdempotencyKey", () => {
 
     const cached = await permcheck.idempotency.getResponse("cache-me");
     expect(cached).toBeDefined();
-    expect((cached as Record<string, unknown>).data).toBeDefined();
+    expect((cached as Record<string, unknown>).body).toEqual({
+      success: true,
+      data: { id: "1" },
+    });
+  });
+
+  test("replays cached response status and text body", async () => {
+    const permcheck = createPermcheck({ idempotency: { ttl: 60000 } });
+    const app = new Hono();
+    app.use(requireIdempotencyKey({ permcheck }));
+    app.post(
+      "/text",
+      () =>
+        new Response("accepted", {
+          status: 202,
+          headers: { "Content-Type": "text/plain", "X-Request-Result": "stored" },
+        })
+    );
+
+    const res1 = await app.request("http://localhost/text", {
+      method: "POST",
+      headers: { "Idempotency-Key": "cache-text-response" },
+    });
+    expect(res1.status).toBe(202);
+
+    const res2 = await app.request("http://localhost/text", {
+      method: "POST",
+      headers: { "Idempotency-Key": "cache-text-response" },
+    });
+    expect(res2.status).toBe(202);
+    expect(res2.headers.get("X-Request-Result")).toBe("stored");
+    expect(await res2.text()).toBe("accepted");
+  });
+
+  test("caches and replays 204 no-content responses without parsing body", async () => {
+    const permcheck = createPermcheck({ idempotency: { ttl: 60000 } });
+    const app = new Hono();
+    app.use(requireIdempotencyKey({ permcheck }));
+    app.post("/empty", (c) => c.body(null, 204));
+
+    const res1 = await app.request("http://localhost/empty", {
+      method: "POST",
+      headers: { "Idempotency-Key": "cache-empty-response" },
+    });
+    expect(res1.status).toBe(204);
+
+    const res2 = await app.request("http://localhost/empty", {
+      method: "POST",
+      headers: { "Idempotency-Key": "cache-empty-response" },
+    });
+    expect(res2.status).toBe(204);
+    expect(await res2.text()).toBe("");
   });
 });
 

@@ -189,4 +189,56 @@ describe("middleware", () => {
     expect(called).toBe(true);
     expect(res!.status).toBe(200);
   });
+
+  test("idempotency replays cached response status, headers, and text body", async () => {
+    const permcheck = createPermcheck({ idempotency: { ttl: 60000 } });
+    const mw = permcheck.middleware({ idempotency: true });
+    const req = new Request("http://localhost/api", {
+      method: "POST",
+      headers: { "Idempotency-Key": "replay-text-response" },
+    });
+
+    const first = await mw(
+      req,
+      async () =>
+        new Response("created", {
+          status: 201,
+          headers: { "Content-Type": "text/plain", "X-Request-Result": "stored" },
+        })
+    );
+    expect(first!.status).toBe(201);
+
+    const second = await mw(
+      new Request("http://localhost/api", {
+        method: "POST",
+        headers: { "Idempotency-Key": "replay-text-response" },
+      }),
+      async () => new Response("should not run", { status: 500 })
+    );
+    expect(second!.status).toBe(201);
+    expect(second!.headers.get("X-Request-Result")).toBe("stored");
+    expect(await second!.text()).toBe("created");
+  });
+
+  test("idempotency caches empty successful responses without throwing", async () => {
+    const permcheck = createPermcheck({ idempotency: { ttl: 60000 } });
+    const mw = permcheck.middleware({ idempotency: true });
+    const req = new Request("http://localhost/api", {
+      method: "POST",
+      headers: { "Idempotency-Key": "replay-empty-response" },
+    });
+
+    const first = await mw(req, async () => new Response(null, { status: 204 }));
+    expect(first!.status).toBe(204);
+
+    const second = await mw(
+      new Request("http://localhost/api", {
+        method: "POST",
+        headers: { "Idempotency-Key": "replay-empty-response" },
+      }),
+      async () => new Response("should not run", { status: 500 })
+    );
+    expect(second!.status).toBe(204);
+    expect(await second!.text()).toBe("");
+  });
 });

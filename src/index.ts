@@ -1,6 +1,11 @@
 import { validateRequest } from "./validate";
 import { ok, fail, paginated, problem } from "./respond";
-import { idempotency, InMemoryStore } from "./idempotency";
+import {
+  captureHttpResponse,
+  idempotency,
+  InMemoryStore,
+  replayCachedHttpResponse,
+} from "./idempotency";
 import { rateLimit, InMemoryRateLimitStore, keyByApiKey } from "./rate-limit";
 import type { RateLimitStore, RateLimitCheckResult } from "./rate-limit";
 import { createApiKeyValidator } from "./api-keys";
@@ -272,10 +277,13 @@ export function createPermcheck(options: PermcheckOptions = {}): Permcheck {
           if (idemKey) {
             const cached = await idempInstance.getResponse(idemKey);
             if (cached) {
-              return new Response(JSON.stringify(cached), {
-                status: 200,
-                headers: { "Content-Type": "application/json" },
-              });
+              return (
+                replayCachedHttpResponse(cached) ??
+                new Response(JSON.stringify(cached), {
+                  status: 200,
+                  headers: { "Content-Type": "application/json" },
+                })
+              );
             }
             permcheckIdempotencyStore.set(req, idemKey);
           }
@@ -288,8 +296,7 @@ export function createPermcheck(options: PermcheckOptions = {}): Permcheck {
         if (enableIdem) {
           const idemKey = permcheckIdempotencyStore.get(req);
           if (idemKey && response.status < 500) {
-            const body = await response.clone().json();
-            await idempInstance.setResponse(idemKey, body);
+            await idempInstance.setResponse(idemKey, await captureHttpResponse(response));
           }
         }
 

@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import type { Permcheck, MiddlewareOptions } from "../index";
 import type { Context, Next } from "hono";
+import { captureHttpResponse, replayCachedHttpResponse } from "../idempotency";
 
 type HonoRateLimitOptions = {
   permcheck: Permcheck;
@@ -77,14 +78,13 @@ export function requireIdempotencyKey({
 
     const cached = await permcheck.idempotency.getResponse(key);
     if (cached) {
-      return c.json(cached, 200);
+      return replayCachedHttpResponse(cached) ?? c.json(cached, 200);
     }
 
     await next();
 
     if (c.res.status < 500) {
-      const body = await c.res.clone().json();
-      permcheck.idempotency.setResponse(key, body).catch(() => {});
+      permcheck.idempotency.setResponse(key, await captureHttpResponse(c.res)).catch(() => {});
     }
   });
 }
