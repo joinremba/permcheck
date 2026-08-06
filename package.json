@@ -125,6 +125,6 @@
     "eslint-config-prettier": "^10.1.8",
     "hono": "^4.12.23",
     "prettier": "^3.8.3",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
