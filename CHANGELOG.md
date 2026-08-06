@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] — 2026-08-06
+
+### Fixed
+
+- **Idempotency middleware no longer assumes a JSON response body.** `requireIdempotencyKey` (Hono adapter) and `permcheck.middleware()` called `response.clone().json()` on every successful (<500) response, which threw `Unexpected end of JSON input` on **204 No Content** (e.g. logout) and mangled `text/plain` responses. Responses are now captured as a structured snapshot (status, headers, body type: `empty`/`json`/`text`) and replayed byte-for-byte on key reuse. Legacy plain-object cache entries still replay via the previous 200-JSON path.
+
 ## [0.5.4] — 2026-07-09
 
 ### Changed
